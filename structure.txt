@@ -1,0 +1,9 @@
+DEEP-FORECAST
+│
+├── app.py              ← FastAPI
+├── predict.py          ← your cleaned ML logic
+├── gru_model.keras     ← saved model
+├── requirements.txt
+│
+└── frontend/
+     └── index.html     ← Vercel
