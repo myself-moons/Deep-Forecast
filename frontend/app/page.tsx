@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -72,13 +73,22 @@ export default function Home() {
     <main className="min-h-screen bg-[#0f1117] text-white px-6 py-10 font-sans">
 
       {/* ── Header ─────────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto mb-10">
-        <h1 className="text-3xl font-bold tracking-tight text-white">
-          📈 GRU Stock Forecast
-        </h1>
-        <p className="text-gray-400 mt-1 text-sm">
-          Residual Stacked GRU · Recursive multi-step prediction
-        </p>
+      <div className="max-w-5xl mx-auto mb-10 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            📈 GRU Stock Forecast
+          </h1>
+          <p className="text-gray-400 mt-1 text-sm">
+            Residual Stacked GRU · Recursive multi-step prediction
+          </p>
+        </div>
+        <Link
+          href="/performance"
+          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg 
+                     text-sm font-semibold transition-all whitespace-nowrap"
+        >
+          📊 Model Metrics
+        </Link>
       </div>
 
       {/* ── Controls ───────────────────────────────────────── */}
