@@ -1,30 +1,26 @@
+# This is the complete model training script
+# You can run this in Colab to train the model and generate the forecast chart
+# Any changes you make here will not affect the API, only changes in predict.py and app.py will do that
 import numpy as np
 import pandas as pd
-import joblib
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
+import joblib
 
 
 import matplotlib.gridspec as gridspec
 from matplotlib.patches import FancyArrowPatch
 import sklearn.metrics
 
-# ── NOTE ──────────────────────────────────────────────────────────────────────
-# This script re-runs the full pipeline to ensure the scalers are identical
-# to what the model was trained on, then forecasts N_DAYS ahead recursively.
-# ─────────────────────────────────────────────────────────────────────────────
-
 tf.random.set_seed(99)
 np.random.seed(99)
 
-N_DAYS = 5   # <── change this to forecast further (accuracy degrades past ~5)
+N_DAYS = 5   # Change this to forecast further (accuracy gets worse past 5 days though)
 
-# ──────────────────────────────────────────────
-# 1. REBUILD DATA + SCALERS (must match v4 exactly)
-# ──────────────────────────────────────────────
+# 1. DATA + SCALERS
 url = 'https://raw.githubusercontent.com/SusmitSekharBhakta/Stock-market-price-prediction/main/final_data_adj.csv'
 df_raw = pd.read_csv(url)
 dates  = pd.to_datetime(df_raw['Date'])
@@ -58,13 +54,7 @@ def scale_df(raw):
 
 full_scaled = scale_df(df)
 
-# ──────────────────────────────────────────────
 # 2. LOAD / REBUILD TRAINED MODEL
-#    If you saved the model with model.save('gru_v4.keras'),
-#    replace the build+fit block with:
-#      model = tf.keras.models.load_model('gru_v4.keras', ...)
-#    Otherwise we retrain here so this file is self-contained.
-# ──────────────────────────────────────────────
 def huber_directional_loss(delta=0.05, direction_weight=0.25):
     def loss(y_true, y_pred):
         err = y_true - y_pred
@@ -134,9 +124,7 @@ history = model.fit(X_train, y_train, epochs=EPOCHS, batch_size=32, # 'history' 
                                                restore_best_weights=True, verbose=1),
           ])
 
-# ──────────────────────────────────────────────
 # Prediction for performance metrics
-# ──────────────────────────────────────────────
 pred_scaled  = model.predict(X_test)
 # Inverse-transform back to actual log-returns
 pred_returns = target_scaler.inverse_transform(pred_scaled)
@@ -144,8 +132,7 @@ true_returns = target_scaler.inverse_transform(y_test)
 # ONE-STEP price reconstruction per sample — no cumsum
 pred_prices = test_anchors * np.exp(pred_returns)
 true_prices = test_anchors * np.exp(true_returns)
-
-# ──────────────────────────────────────────────
+# Explaination:
 # 3. RECURSIVE FORECASTING
 #
 #    Starting from the LAST WINDOW of known data,
@@ -189,11 +176,12 @@ for step in range(N_DAYS):
     forecast_returns.append(pred_return)
     forecast_prices.append(next_price)
 
-    # Advance date (skip weekends naively)
-    next_date = last_known_date + pd.Timedelta(days=step + 1)
-    while next_date.weekday() >= 5:
-        next_date += pd.Timedelta(days=1)
-    forecast_dates.append(next_date)
+    # Advance date sequentially, skipping weekends
+    new_forecast_date = last_known_date + pd.Timedelta(days=1)
+    while new_forecast_date.weekday() >= 5: # 5 is Saturday, 6 is Sunday
+        new_forecast_date += pd.Timedelta(days=1)
+    forecast_dates.append(new_forecast_date)
+    last_known_date = new_forecast_date # Update last_known_date for the next iteration
 
     # Build the next scaled feature row:
     # - copy last row of window (carries forward volume, RSI, MACD etc.)
@@ -206,13 +194,11 @@ for step in range(N_DAYS):
     current_window = np.vstack([current_window[1:], new_row])
     current_price  = next_price
 
-# ──────────────────────────────────────────────
 # 4. PLOT
-# ──────────────────────────────────────────────
 forecast_prices  = np.array(forecast_prices)   # (N_DAYS, 2)
 forecast_returns = np.array(forecast_returns)  # (N_DAYS, 2)
 
-# Show last 60 days of history + forecast
+# Show last 60 days of history + forecast in the chart
 history_n    = 60
 history_dates  = dates.iloc[-history_n:].values
 history_open   = raw_prices['Open'].iloc[-history_n:].values
@@ -255,9 +241,7 @@ plt.tight_layout()
 plt.savefig('forecast_v4.png', dpi=150)
 plt.show()
 
-# ──────────────────────────────────────────────
 # 5. FORECAST TABLE
-# ──────────────────────────────────────────────
 print(f"\n{'Date':<14} {'Open':>10} {'Close':>10} {'Open ret%':>10} {'Close ret%':>10}")
 print("─" * 58)
 for i, (d, p, r) in enumerate(zip(forecast_dates, forecast_prices, forecast_returns)):
@@ -269,17 +253,8 @@ print(f"Forecast end       →  Open: {forecast_prices[-1,0]:.2f}  Close: {forec
 print(f"Total move         →  Open: {((forecast_prices[-1,0]/last_known_price[0])-1)*100:+.2f}%  "
       f"Close: {((forecast_prices[-1,1]/last_known_price[1])-1)*100:+.2f}%")
 
-# ═══════════════════════════════════════════════════════════════
-# PERFORMANCE METRICS + VISUALISATION
-# Paste this at the end of stacked_GRU_v4.py in your Colab cell
-# Requires: pred_returns, true_returns, pred_prices, true_prices
-#           history (from model.fit), y_train, X_train
-# ═══════════════════════════════════════════════════════════════
 
-
-# ──────────────────────────────────────────────
-# A. COMPUTE ALL METRICS
-# ──────────────────────────────────────────────
+# 6. COMPUTE ALL METRICS
 
 def compute_metrics(true, pred, label):
     r2       = sklearn.metrics.r2_score(true, pred)
@@ -322,12 +297,10 @@ for key in ['R²', 'MSE', 'RMSE', 'MAE', 'MAPE %', 'Dir Acc', 'Dir Acc (large mo
         row += f" {v:>11.4f}" if not np.isnan(v) else f" {'n/a':>11}"
     print(row)
 
-# ──────────────────────────────────────────────
-# B. VISUALISATION — 3-panel figure
+# 7. VISUALISATION — 3-panel figure
 #    Panel 1: metric bar chart (returns only — the honest ones)
 #    Panel 2: actual vs predicted returns scatter
 #    Panel 3: training & validation loss curve
-# ──────────────────────────────────────────────
 
 GRAY   = '#6b6b6b'
 TEAL   = '#1D9E75'
@@ -351,7 +324,7 @@ ax_resid  = fig.add_subplot(gs[1, 2])   # bottom-right:  residual dist
 for ax in [ax_bar, ax_loss, ax_sc_op, ax_sc_cl, ax_resid]:
     ax.set_facecolor(BG)
 
-# ── Panel 1: Metric bars (returns metrics only) ─────────────────
+# Panel 1: Metric bars (returns metrics only) 
 metrics_to_plot = ['Dir Acc', 'Dir Acc (large moves)']
 # Normalise R² to 0–1 for display (clamp negative to 0)
 labels  = ['Dir Acc\n(overall)', 'Dir Acc\n(large moves)']
@@ -394,7 +367,7 @@ ax_bar.text(0.01, 0.06, info, transform=ax_bar.transAxes,
             fontsize=8.5, color=GRAY, family='monospace',
             bbox=dict(boxstyle='round,pad=0.4', facecolor='white', alpha=0.7, edgecolor='#ccc'))
 
-# ── Panel 2: Training & validation loss ─────────────────────────
+# Training & validation loss
 train_loss = history.history['loss']
 val_loss   = history.history['val_loss']
 epochs_ran = range(1, len(train_loss) + 1)
@@ -418,7 +391,7 @@ ax_loss.legend(fontsize=9)
 ax_loss.grid(alpha=0.3)
 ax_loss.spines[['top','right']].set_visible(False)
 
-# ── Panel 3 & 4: Actual vs predicted scatter (returns) ──────────
+# Panel 3 & 4: Actual vs predicted scatter (returns)
 for ax, true_r, pred_r, color, title in [
     (ax_sc_op, true_returns[:, 0], pred_returns[:, 0], TEAL,  'Open returns'),
     (ax_sc_cl, true_returns[:, 1], pred_returns[:, 1], CORAL, 'Close returns'),
@@ -459,7 +432,7 @@ for ax, true_r, pred_r, color, title in [
             transform=ax.transAxes, fontsize=8.5, ha='right',
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.75, edgecolor='#ccc'))
 
-# ── Panel 5: Residual distribution ──────────────────────────────
+# Panel 5: Residual distribution
 resid_open  = pred_returns[:, 0] - true_returns[:, 0]
 resid_close = pred_returns[:, 1] - true_returns[:, 1]
 
@@ -485,15 +458,14 @@ plt.savefig('gru_v4_performance.png', dpi=150, bbox_inches='tight')
 plt.show()
 print("\nSaved → gru_v4_performance.png")
 
-
-# 1. Save the trained Keras model
+# 8. Save the trained Keras model
 model.save('gru_v4.keras')
 print("Model saved as 'gru_v4.keras'")
 
-# 2. Save the feature_scaler
+# 9. Save the feature_scaler
 joblib.dump(feature_scaler, 'feature_scaler.joblib')
 print("Feature scaler saved as 'feature_scaler.joblib'")
 
-# 3. Save the target_scaler
+# 10. Save the target_scaler
 joblib.dump(target_scaler, 'target_scaler.joblib')
 print("Target scaler saved as 'target_scaler.joblib'")

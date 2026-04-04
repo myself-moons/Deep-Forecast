@@ -6,11 +6,11 @@ app = FastAPI()
 
 # ✅ CORS FIRST
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware, 
     allow_origins=["https://deep-forecast.vercel.app"],
     allow_credentials=True,
-    allow_methods=["*"],  # IMPORTANT
-    allow_headers=["*"],
+    allow_methods=["*"],  # allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"], # allow all headers (you can restrict this if needed)
 )
 
 @app.get("/")
