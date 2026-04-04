@@ -14,7 +14,7 @@ def forecast(n_days: int = 5):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://your-frontend.vercel.app"],
+    allow_origins=["https://deep-forecast.vercel.app"],
     allow_methods=["GET"],
     allow_headers=["*"],
 )
