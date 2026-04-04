@@ -156,6 +156,7 @@ def run_forecast(n_days: int = 5) -> dict:
 
     current_window = seed_window.copy()
     current_price  = last_known_price.copy()
+    current_date   = last_known_date
 
     for step in range(n_days):
         x_input = current_window[np.newaxis, :, :].astype(np.float32)  # (1, WINDOW, F)
@@ -166,11 +167,12 @@ def run_forecast(n_days: int = 5) -> dict:
         next_price = current_price * np.exp(pred_return)
         forecast_prices.append(next_price)
 
-        # Advance date, skipping weekends
-        next_date = last_known_date + pd.Timedelta(days=step + 1)
+        # Advance date by 1 trading day, skipping weekends
+        next_date = current_date + pd.Timedelta(days=1)
         while next_date.weekday() >= 5:
             next_date += pd.Timedelta(days=1)
         forecast_dates.append(next_date)
+        current_date = next_date
 
         # Update window: carry last row forward, overwrite Open/Close
         new_row = current_window[-1].copy()
