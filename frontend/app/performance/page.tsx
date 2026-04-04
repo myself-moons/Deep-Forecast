@@ -15,9 +15,6 @@ const metrics: MetricRow[] = [
   { metric: "MSE", open_ret: "0.0001", close_ret: "0.0004", open_px: "41621.4514", close_px: "110373.6803" },
   { metric: "RMSE", open_ret: "0.0120", close_ret: "0.0194", open_px: "204.0134", close_px: "332.2253" },
   { metric: "MAE", open_ret: "0.0097", close_ret: "0.0162", open_px: "164.0673", close_px: "276.3165" },
-  { metric: "MAPE %", open_ret: "914.8455", close_ret: "990.9326", open_px: "0.9715", close_px: "1.6298" },
-  { metric: "Dir Acc", open_ret: "0.5684", close_ret: "0.5171", open_px: "1.0000", close_px: "1.0000" },
-  { metric: "Dir Acc (large moves)", open_ret: "0.5593", close_ret: "0.4068", open_px: "1.0000", close_px: "1.0000" },
 ];
 
 export default function Performance() {

@@ -76,7 +76,7 @@ export default function Home() {
       <div className="max-w-5xl mx-auto mb-10 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white">
-            📈 GRU Stock Forecast
+            Stock Forecasting with GRU
           </h1>
           <p className="text-gray-400 mt-1 text-sm">
             Residual Stacked GRU · Recursive multi-step prediction
@@ -87,14 +87,14 @@ export default function Home() {
           className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg 
                      text-sm font-semibold transition-all whitespace-nowrap"
         >
-          📊 Model Metrics
+          Model Metrics
         </Link>
       </div>
 
       {/* ── Controls ───────────────────────────────────────── */}
       <div className="max-w-5xl mx-auto flex items-center gap-4 mb-8">
         <label className="text-sm text-gray-400">Forecast days:</label>
-        {[3, 5, 7, 10].map((d) => (
+        {[3, 5].map((d) => (
           <button
             key={d}
             onClick={() => setNDays(d)}
