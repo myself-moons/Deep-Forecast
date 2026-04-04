@@ -1,0 +1,10 @@
+*.py
+*.keras
+*.joblib
+*.csv
+*.txt
+runtime.txt
+.python-version
+requirements.txt
+__pycache__/
+venv/
