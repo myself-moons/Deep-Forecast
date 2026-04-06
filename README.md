@@ -2,8 +2,9 @@
 Performing Forecasting using Deep Temporal Model and GenAI on a Stock Market Dataset. 
 
 Deployment Guide: Render and Vercel
+
 Step 1: Prepare the project repository.
-Ensure that the root directory contains app.py, predict.py, requirements.txt, runtime.txt, and your trained model files including gru_v4.keras, feature_scaler.joblib, and target_scaler.joblib.
+Ensure that the repository contains app.py, predict.py, requirements.txt, runtime.txt, and your trained model files including gru_v4.keras, feature_scaler.joblib, and target_scaler.joblib.
 
 Step 2: Specify the Python version.
 Create a file named runtime.txt in the root directory and add the line python-3.11.9 to ensure compatibility with dependencies. ALso create .python-version with 3.11.9 in it.
