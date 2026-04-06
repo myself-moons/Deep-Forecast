@@ -21,10 +21,11 @@ from sklearn.impute import SimpleImputer
 
 
 # ── Paths (override via environment variables if needed) ──────────────────────
-MODEL_PATH          = os.getenv("MODEL_PATH",          "gru_v4.keras")
-FEATURE_SCALER_PATH = os.getenv("FEATURE_SCALER_PATH", "feature_scaler.joblib")
-TARGET_SCALER_PATH  = os.getenv("TARGET_SCALER_PATH",  "target_scaler.joblib")
+MODEL_PATH          = os.getenv("MODEL_PATH",          "model_files/gru_v4.keras")
+FEATURE_SCALER_PATH = os.getenv("FEATURE_SCALER_PATH", "model_files/feature_scaler.joblib")
+TARGET_SCALER_PATH  = os.getenv("TARGET_SCALER_PATH",  "model_files/target_scaler.joblib")
 
+#Use URL or direct path to the CSV data (the URL is used here to ensure the same data as training, but can be overridden if needed)
 DATA_URL = (
     "https://raw.githubusercontent.com/SusmitSekharBhakta/"
     "Stock-market-price-prediction/main/final_data_adj.csv"

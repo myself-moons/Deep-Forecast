@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# ✅ CORS FIRST
+# CONFIGURE CORS FIRST then add URLs
 app.add_middleware(
     CORSMiddleware, 
     allow_origins=["https://deep-forecast.vercel.app"],

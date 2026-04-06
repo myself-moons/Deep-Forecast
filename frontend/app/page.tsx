@@ -94,7 +94,7 @@ export default function Home() {
       {/* ── Controls ───────────────────────────────────────── */}
       <div className="max-w-5xl mx-auto flex items-center gap-4 mb-8">
         <label className="text-sm text-gray-400">Forecast days:</label>
-        {[3, 5].map((d) => (
+        {[5].map((d) => (
           <button
             key={d}
             onClick={() => setNDays(d)}

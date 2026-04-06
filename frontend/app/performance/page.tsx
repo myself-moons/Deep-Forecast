@@ -24,7 +24,7 @@ export default function Performance() {
       <div className="max-w-6xl mx-auto flex items-center justify-between mb-10">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white">
-            📊 Model Performance
+            Model Performance
           </h1>
           <p className="text-gray-400 mt-1 text-sm">
             Residual Stacked GRU · Evaluation metrics &amp; visualizations
@@ -46,7 +46,7 @@ export default function Performance() {
         </h2>
         <div className="flex items-center justify-center bg-[#0f1117] rounded-lg p-4">
           <img
-            src="/performance.png"
+            src="/gru_v4_performance.png"
             alt="GRU Model Performance Visualization"
             className="max-w-full h-auto"
           />
@@ -106,14 +106,6 @@ export default function Performance() {
           <div>
             <p className="font-semibold text-gray-100 mb-1">MAE (Mean Absolute Error)</p>
             <p className="text-gray-400">Average absolute error. Lower is better.</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-100 mb-1">MAPE (Mean Absolute Percentage Error)</p>
-            <p className="text-gray-400">Average percentage error. Lower is better (expressed as %).</p>
-          </div>
-          <div>
-            <p className="font-semibold text-gray-100 mb-1">Dir Acc (Directional Accuracy)</p>
-            <p className="text-gray-400">% of times model correctly predicted movement direction. Target &gt; 50%.</p>
           </div>
         </div>
       </div>
