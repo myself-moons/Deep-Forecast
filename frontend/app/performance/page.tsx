@@ -46,7 +46,7 @@ export default function Performance() {
         </h2>
         <div className="flex items-center justify-center bg-[#0f1117] rounded-lg p-4">
           <img
-            src="/gru_v4_performance.png"
+            src="/performance.png"
             alt="GRU Model Performance Visualization"
             className="max-w-full h-auto"
           />
