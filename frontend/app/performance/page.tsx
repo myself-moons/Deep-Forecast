@@ -15,6 +15,8 @@ const metrics: MetricRow[] = [
   { metric: "MSE", open_ret: "0.0001", close_ret: "0.0004", open_px: "41621.4514", close_px: "110373.6803" },
   { metric: "RMSE", open_ret: "0.0120", close_ret: "0.0194", open_px: "204.0134", close_px: "332.2253" },
   { metric: "MAE", open_ret: "0.0097", close_ret: "0.0162", open_px: "164.0673", close_px: "276.3165" },
+  { metric: "Direction Accuracy", open_ret: "0.568", close_ret: "0.517", open_px: "—", close_px:"—" },
+  { metric: "Direction Accuracy(Large)", open_ret: "0.559", close_ret: "0.407", open_px: "—", close_px:"—" },
 ];
 
 export default function Performance() {
