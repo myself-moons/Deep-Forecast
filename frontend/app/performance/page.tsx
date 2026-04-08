@@ -9,7 +9,7 @@ interface MetricRow {
   open_px: string;
   close_px: string;
 }
-
+/* Metrics */
 const metrics: MetricRow[] = [
   { metric: "R²", open_ret: "-0.5826", close_ret: "-3.7990", open_px: "0.9231", close_px: "0.7927" },
   { metric: "MSE", open_ret: "0.0001", close_ret: "0.0004", open_px: "41621.4514", close_px: "110373.6803" },
