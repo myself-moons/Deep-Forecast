@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from predict import run_forecast
+import json
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -19,4 +19,5 @@ def home():
 
 @app.get("/forecast")
 def forecast(n_days: int = 5):
-    return run_forecast(n_days=n_days)
+    with open("model_files/latest_forecast.json", "r") as f:
+        return json.load(f)

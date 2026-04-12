@@ -1,0 +1,117 @@
+1. Environment Setup
+# Ensure you're in the project root
+cd /workspaces/Deep-Forecast
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Verify core imports work
+python -c "import tensorflow as tf; import joblib; import pandas as pd; print('✅ Dependencies OK')"
+
+
+2. Test Inference Pipeline
+# Test predict.py directly
+python -c "from predict import run_forecast; result = run_forecast(); print('✅ Prediction keys:', list(result.keys()))"
+
+# Verify output format matches requirements
+python -c "
+from predict import run_forecast
+data = run_forecast()
+assert 'forecast_dates' in data
+assert 'forecast_prices' in data  
+assert 'metrics' in data
+assert len(data['forecast_dates']) == 5
+assert len(data['forecast_prices']) == 5
+print('✅ Output format correct')
+"
+
+
+3. Test Caching System
+# Generate initial cache
+python predict.py
+
+# Verify cache file exists and is valid JSON
+python -c "
+import json
+with open('model_files/latest_forecast.json') as f:
+    data = json.load(f)
+print('✅ Cache loaded, keys:', list(data.keys()))
+"
+
+4. Test API Endpoints
+# Install uvicorn if not already installed
+pip install uvicorn
+
+# Start the server in background
+uvicorn app:app --host 0.0.0.0 --port 8000 &
+
+# Test root endpoint
+curl http://localhost:8000/
+# Expected: {"message":"Forecast API running"}
+
+# Test forecast endpoint
+curl http://localhost:8000/forecast
+# Should return the cached JSON data
+
+# Full validation with Python
+python -c "
+import requests
+response = requests.get('http://localhost:8000/forecast')
+data = response.json()
+assert response.status_code == 200
+assert len(data['forecast_dates']) == 5
+assert 'metrics' in data
+print('✅ API responding correctly')
+"
+
+# Stop the server
+pkill -f uvicorn
+
+
+5. Performance Test (Caching Benefits)
+# Time a direct prediction vs cached response
+python -c "
+import time
+from predict import run_forecast
+
+# Time direct prediction
+start = time.time()
+result = run_forecast()
+direct_time = time.time() - start
+
+# Time cached load
+import json
+start = time.time()
+with open('model_files/latest_forecast.json') as f:
+    cached = json.load(f)
+cache_time = time.time() - start
+
+print(f'Direct prediction: {direct_time:.2f}s')
+print(f'Cached load: {cache_time:.4f}s')
+print(f'✅ Cache is {direct_time/cache_time:.0f}x faster')
+"
+
+6. Cache Regeneration Test
+# Regenerate cache
+python predict.py
+
+# Verify cache updated
+python -c "
+import json
+with open('model_files/latest_forecast.json') as f:
+    data = json.load(f)
+print('✅ Cache regenerated successfully')
+"
+
+7. File Structure Verification
+# Ensure all required files exist
+ls -la model_files/
+# Should show: feature_scaler.joblib, gru_v4.keras, latest_forecast.json, metrics.txt, target_scaler.joblib
+
+8. Frontend Integration Test
+# In frontend/ directory
+cd frontend/
+npm install
+npm run dev
+
+# Then test API calls from browser dev tools

@@ -71,6 +71,24 @@ def _load_artifacts():
         _target_scaler = joblib.load(TARGET_SCALER_PATH)
 
 
+def _load_metrics():
+    metrics = {}
+    with open("model_files/metrics.txt", "r") as f:
+        lines = f.readlines()
+    for line in lines:
+        line = line.strip()
+        if line.startswith("R²"):
+            parts = line.split()
+            metrics['r2'] = float(parts[-1])  # Close px
+        elif line.startswith("MAE"):
+            parts = line.split()
+            metrics['mae'] = float(parts[-1])
+        elif line.startswith("Dir Acc") and "Large" not in line:
+            parts = line.split()
+            metrics['dir_acc'] = float(parts[-1])
+    return metrics
+
+
 # ── Data helpers ──────────────────────────────────────────────────────────────
 def _load_and_preprocess():
     """
@@ -185,10 +203,18 @@ def run_forecast(n_days: int = 5) -> dict:
 
     forecast_prices = np.array(forecast_prices)   # (n_days, 2)
 
+    metrics = _load_metrics()
+
     return {
-        "forecast_dates":   [d.strftime("%Y-%m-%d") for d in forecast_dates],
-        "forecast_open":    forecast_prices[:, 0].tolist(),
-        "forecast_close":   forecast_prices[:, 1].tolist(),
-        "last_known_open":  float(last_known_price[0]),
-        "last_known_close": float(last_known_price[1]),
+        "forecast_dates": [d.strftime("%Y-%m-%d") for d in forecast_dates],
+        "forecast_prices": forecast_prices.tolist(),
+        "metrics": metrics
     }
+
+
+if __name__ == "__main__":
+    import json
+    result = run_forecast()
+    with open("model_files/latest_forecast.json", "w") as f:
+        json.dump(result, f)
+    print("Forecast saved to model_files/latest_forecast.json")
