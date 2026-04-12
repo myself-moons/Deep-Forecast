@@ -146,11 +146,13 @@ def run_forecast(n_days: int = 5) -> dict:
     Returns
     -------
     dict with keys:
-        "forecast_dates"  : list[str]  — ISO-format date strings
-        "forecast_open"   : list[float]
-        "forecast_close"  : list[float]
-        "last_known_open" : float
-        "last_known_close": float
+        "forecast_dates"   : list[str]  — ISO-format date strings
+        "forecast_open"    : list[float]
+        "forecast_close"   : list[float]
+        "last_known_open"  : float
+        "last_known_close" : float
+        "forecast_prices"  : list[list[float]]
+        "metrics"          : dict
     """
     _load_artifacts()
 
@@ -207,8 +209,12 @@ def run_forecast(n_days: int = 5) -> dict:
 
     return {
         "forecast_dates": [d.strftime("%Y-%m-%d") for d in forecast_dates],
+        "forecast_open": forecast_prices[:, 0].tolist(),
+        "forecast_close": forecast_prices[:, 1].tolist(),
         "forecast_prices": forecast_prices.tolist(),
-        "metrics": metrics
+        "last_known_open": float(last_known_price[0]),
+        "last_known_close": float(last_known_price[1]),
+        "metrics": metrics,
     }
 
 
