@@ -13,6 +13,7 @@ Usage:
 """
 
 import os
+import re
 import numpy as np
 import pandas as pd
 import joblib
@@ -72,20 +73,58 @@ def _load_artifacts():
 
 
 def _load_metrics():
-    metrics = {}
+    metric_map = {
+        "R²": "r2",
+        "MSE": "mse",
+        "RMSE": "rmse",
+        "MAE": "mae",
+        "Dir Acc": "dir_acc",
+        "Dir Acc (Large Moves)": "dir_acc_large_moves",
+    }
+
+    open_ret = {}
+    close_ret = {}
+    open_px = {}
+    close_px = {}
+
     with open("model_files/metrics.txt", "r") as f:
-        lines = f.readlines()
-    for line in lines:
-        line = line.strip()
-        if line.startswith("R²"):
-            parts = line.split()
-            metrics['r2'] = float(parts[-1])  # Close px
-        elif line.startswith("MAE"):
-            parts = line.split()
-            metrics['mae'] = float(parts[-1])
-        elif line.startswith("Dir Acc") and "Large" not in line:
-            parts = line.split()
-            metrics['dir_acc'] = float(parts[-1])
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("Metric") or line.startswith("─"):
+                continue
+
+            match = re.match(
+                r"^(.*?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)(?:\s+(-?\d+(?:\.\d+)?))?(?:\s+(-?\d+(?:\.\d+)?))?$",
+                line,
+            )
+            if not match:
+                continue
+
+            label = match.group(1).strip()
+            key = metric_map.get(label)
+            if key is None:
+                continue
+
+            values = [float(v) for v in match.groups()[1:] if v is not None]
+            if len(values) >= 2:
+                open_ret[key] = values[0]
+                close_ret[key] = values[1]
+            if len(values) >= 4:
+                open_px[key] = values[2]
+                close_px[key] = values[3]
+
+    metrics = {
+        "open_ret": open_ret,
+        "close_ret": close_ret,
+        "open_px": open_px,
+        "close_px": close_px,
+        "r2": close_px.get("r2"),
+        "mse": close_px.get("mse"),
+        "rmse": close_px.get("rmse"),
+        "mae": close_px.get("mae"),
+        "dir_acc": close_ret.get("dir_acc"),
+        "dir_acc_large_moves": close_ret.get("dir_acc_large_moves"),
+    }
     return metrics
 
 

@@ -1,25 +1,94 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://deep-forecast.onrender.com";
+
+type MetricKey = "r2" | "mse" | "rmse" | "mae" | "dir_acc" | "dir_acc_large_moves";
 
 interface MetricRow {
   metric: string;
-  open_ret: string;
-  close_ret: string;
-  open_px: string;
-  close_px: string;
+  key: MetricKey;
+  decimals: number;
+  hasPriceColumns: boolean;
 }
-/* Metrics */
-const metrics: MetricRow[] = [
+
+interface MetricsGroup {
+  [key: string]: number | undefined;
+}
+
+interface MetricsResponse {
+  open_ret: MetricsGroup;
+  close_ret: MetricsGroup;
+  open_px: MetricsGroup;
+  close_px: MetricsGroup;
+}
+
+interface ForecastApiResponse {
+  metrics: MetricsResponse;
+}
+
+const metricRows: MetricRow[] = [
+  { metric: "R²", key: "r2", decimals: 4, hasPriceColumns: true },
+  { metric: "MSE", key: "mse", decimals: 4, hasPriceColumns: true },
+  { metric: "RMSE", key: "rmse", decimals: 4, hasPriceColumns: true },
+  { metric: "MAE", key: "mae", decimals: 4, hasPriceColumns: true },
+  { metric: "Direction Accuracy", key: "dir_acc", decimals: 3, hasPriceColumns: false },
+  { metric: "Direction Accuracy (Large)", key: "dir_acc_large_moves", decimals: 3, hasPriceColumns: false },
+];
+
+const fallbackMetrics = [
   { metric: "R²", open_ret: "-0.5826", close_ret: "-3.7990", open_px: "0.9231", close_px: "0.7927" },
   { metric: "MSE", open_ret: "0.0001", close_ret: "0.0004", open_px: "41621.4514", close_px: "110373.6803" },
   { metric: "RMSE", open_ret: "0.0120", close_ret: "0.0194", open_px: "204.0134", close_px: "332.2253" },
   { metric: "MAE", open_ret: "0.0097", close_ret: "0.0162", open_px: "164.0673", close_px: "276.3165" },
-  { metric: "Direction Accuracy", open_ret: "0.568", close_ret: "0.517", open_px: "—", close_px:"—" },
-  { metric: "Direction Accuracy(Large)", open_ret: "0.559", close_ret: "0.407", open_px: "—", close_px:"—" },
+  { metric: "Direction Accuracy", open_ret: "0.568", close_ret: "0.517", open_px: "—", close_px: "—" },
+  { metric: "Direction Accuracy (Large)", open_ret: "0.559", close_ret: "0.407", open_px: "—", close_px: "—" },
 ];
 
+function formatNumber(value: number | undefined, decimals: number) {
+  if (value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+  return value.toFixed(decimals);
+}
+
 export default function Performance() {
+  const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchMetrics() {
+      try {
+        const response = await fetch(`${API_URL}/forecast?n_days=5`);
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        const data = (await response.json()) as ForecastApiResponse;
+        setMetrics(data.metrics);
+      } catch (err: any) {
+        setError(err?.message || "Unable to load metrics");
+      }
+    }
+
+    fetchMetrics();
+  }, []);
+
+  const tableMetrics = metrics
+    ? metricRows.map((row) => ({
+        metric: row.metric,
+        open_ret: formatNumber(metrics.open_ret[row.key], row.decimals),
+        close_ret: formatNumber(metrics.close_ret[row.key], row.decimals),
+        open_px: row.hasPriceColumns
+          ? formatNumber(metrics.open_px[row.key], 4)
+          : "—",
+        close_px: row.hasPriceColumns
+          ? formatNumber(metrics.close_px[row.key], 4)
+          : "—",
+      }))
+    : fallbackMetrics;
+
   return (
     <main className="min-h-screen bg-[#0f1117] text-white px-6 py-10 font-sans">
       {/* ── Navigation Bar ─────────────────────────────────────── */}
@@ -57,9 +126,16 @@ export default function Performance() {
 
       {/* ── Metrics Table ──────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto bg-[#1e2130] rounded-2xl border border-[#2a2f45] p-6">
-        <h2 className="text-base font-semibold text-gray-200 mb-4">
-          Detailed Metrics
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-gray-200">Detailed Metrics</h2>
+          {error ? (
+            <span className="text-xs text-orange-300">{error}</span>
+          ) : (
+            <span className="text-xs text-gray-400">
+              {metrics ? "Live metrics from API" : "Using cached fallback metrics"}
+            </span>
+          )}
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead>
@@ -72,7 +148,7 @@ export default function Performance() {
               </tr>
             </thead>
             <tbody>
-              {metrics.map((row, idx) => (
+              {tableMetrics.map((row, idx) => (
                 <tr
                   key={idx}
                   className="border-b border-[#2a2f45] hover:bg-[#252b3b] transition-colors"
