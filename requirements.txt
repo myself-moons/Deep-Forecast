@@ -6,3 +6,4 @@ matplotlib==3.8.4
 scikit-learn==1.5.0
 joblib==1.4.2
 tensorflow==2.16.1
+apscheduler==3.10.4

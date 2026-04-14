@@ -29,10 +29,54 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
   const [nDays, setNDays]     = useState(5);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Load cached forecast from static file for instant display
+  const loadCachedForecast = async () => {
+    try {
+      const res = await fetch("/latest_forecast.json");
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // Fetch fresh forecast from API (background)
+  const fetchFreshForecast = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch(`${API_URL}/forecast?n_days=${nDays}`);
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      const json: ForecastData = await res.json();
+      setData(json);
+      setError(null);
+    } catch (e: any) {
+      console.warn("Failed to refresh from API:", e.message);
+      // Don't show error if we already have cached data
+      if (!data) {
+        setError(e.message || "Failed to fetch forecast");
+      }
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const fetchForecast = async () => {
     setLoading(true);
     setError(null);
+    
+    // Try cached forecast first (instant load)
+    const cached = await loadCachedForecast();
+    if (cached) {
+      setData(cached);
+      setLoading(false);
+      // Refresh in background after loading cache
+      fetchFreshForecast();
+      return;
+    }
+
+    // Fallback: fetch from API if no cache
     try {
       const res = await fetch(`${API_URL}/forecast?n_days=${nDays}`);
       if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -109,11 +153,11 @@ export default function Home() {
         ))}
         <button
           onClick={fetchForecast}
-          disabled={loading}
+          disabled={loading || isRefreshing}
           className="ml-auto px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
                      rounded-lg text-sm font-semibold transition-all"
         >
-          {loading ? "Loading…" : "Run Forecast"}
+          {loading ? "Loading…" : isRefreshing ? "Refreshing…" : "Run Forecast"}
         </button>
       </div>
 
