@@ -47,6 +47,141 @@ const fallbackMetrics = [
   { metric: "Direction Accuracy (Large)", open_ret: "0.559", close_ret: "0.407", open_px: "—", close_px: "—" },
 ];
 
+function ChartExplanations() {
+  const [open, setOpen] = useState(false);
+
+  const charts = [
+    {
+      title: "Directional Accuracy on Log-Returns",
+      icon: "📊",
+      summary: "Primary metric — how often does the model predict the right direction?",
+      details: `The bar chart compares directional accuracy for Open and Close return predictions against the 0.5 baseline (random chance).
+      
+• Dir Acc (overall): Measured across all test days. Open (0.568) beats chance; Close (0.517) is near-random.
+• Dir Acc (large moves): Only on days where the actual return exceeded a threshold. Open (0.559) holds up well; Close (0.407) struggles — the model often predicts the wrong direction on big Close moves.
+
+A score above 0.5 means the model is directionally useful. The embedded R² and MAE annotations show how the return-prediction quality compares across both outputs.`,
+    },
+    {
+      title: "Training vs Validation Loss",
+      icon: "📉",
+      summary: "How the model learned — and where it stopped.",
+      details: `Plots Huber + Directional loss over epochs for the training set (solid blue) and validation set (dashed orange).
+
+• Training loss decreases steadily, showing the model is fitting the data.
+• Validation loss is volatile — spikes around epochs 8–10 and 14–17 indicate instability on unseen data.
+• The best checkpoint was saved at epoch 7 (val loss ≈ 0.0244), indicated by the dotted vertical line.
+
+The divergence between train and val loss after epoch 7 suggests mild overfitting. Early stopping at epoch 7 was the right call.`,
+    },
+    {
+      title: "Actual vs Predicted — Open Returns",
+      icon: "🟢",
+      summary: "Scatter plot of predicted vs actual Open log-returns.",
+      details: `Each dot is one test-day prediction. The dashed diagonal is the perfect-prediction line (predicted = actual).
+
+• Points in the top-left and bottom-right quadrants are directional errors (wrong sign).
+• The cloud is loosely correlated but scattered — R² = −0.583 confirms the model explains less variance than a flat mean prediction.
+• Most points cluster near zero, as daily returns are small. The model tends to under-predict the magnitude of larger moves.
+
+Despite a poor R², directional accuracy of 0.568 means the sign is correct more than half the time — useful for trend-following signals.`,
+    },
+    {
+      title: "Actual vs Predicted — Close Returns",
+      icon: "🟠",
+      summary: "Scatter plot of predicted vs actual Close log-returns.",
+      details: `Same layout as the Open chart, but for Close return predictions.
+
+• R² = −3.799 is significantly worse — the model's Close predictions are highly noisy relative to actual variance.
+• Directional accuracy of 0.517 is near-random, and the scatter shows little alignment with the diagonal.
+• Close returns are harder to predict: they integrate intraday noise that open-to-open returns don't.
+
+This chart suggests the model should be used primarily for Open return signals, not Close.`,
+    },
+    {
+      title: "Prediction Error Distribution",
+      icon: "📐",
+      summary: "How are prediction errors (residuals) distributed?",
+      details: `Histogram of residuals (predicted − actual) for both Open (green) and Close (orange).
+
+• Both distributions are roughly centered near zero, meaning no strong systematic bias.
+• Open residuals (green) are tighter and more symmetric — the model's errors are smaller and more consistent.
+• Close residuals (orange) have a heavier right tail — the model tends to over-predict Close returns on some days.
+• The dotted vertical lines (bias markers) confirm both biases are small but non-zero.
+
+A well-calibrated model should show a narrow, zero-centered distribution. Open is closer to this ideal than Close.`,
+    },
+  ];
+
+  return (
+    <div className="max-w-6xl mx-auto mb-8">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between bg-[#1e2130] border border-[#2a2f45] rounded-2xl px-6 py-4 text-left transition-colors hover:bg-[#252b3b] group"
+        aria-expanded={open}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-indigo-400 text-lg">📖</span>
+          <div>
+            <p className="text-base font-semibold text-gray-200">Chart Explanations</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {open ? "Click to collapse" : "Understand what each chart is telling you"}
+            </p>
+          </div>
+        </div>
+        <span
+          className="text-gray-400 text-xl transition-transform duration-300 group-hover:text-gray-200"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", display: "inline-block" }}
+        >
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <div className="mt-2 bg-[#1e2130] border border-[#2a2f45] rounded-2xl p-6 space-y-5 animate-fade-in">
+          {charts.map((chart, idx) => (
+            <ChartItem key={idx} chart={chart} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChartItem({ chart }: { chart: { title: string; icon: string; summary: string; details: string } }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border border-[#2a2f45] rounded-xl overflow-hidden">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-start gap-4 px-5 py-4 text-left hover:bg-[#252b3b] transition-colors"
+        aria-expanded={expanded}
+      >
+        <span className="text-2xl mt-0.5 shrink-0">{chart.icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-100">{chart.title}</p>
+          <p className="text-xs text-gray-400 mt-0.5">{chart.summary}</p>
+        </div>
+        <span
+          className="text-gray-500 text-sm mt-1 shrink-0 transition-transform duration-200"
+          style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)", display: "inline-block" }}
+        >
+          ▾
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="px-5 pb-5 pt-1 bg-[#161a27] border-t border-[#2a2f45]">
+          <p className="text-sm text-gray-300 whitespace-pre-line leading-relaxed">
+            {chart.details}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function formatNumber(value: number | undefined, decimals: number) {
   if (value === undefined || Number.isNaN(value)) {
     return "—";
@@ -123,6 +258,9 @@ export default function Performance() {
           />
         </div>
       </div>
+
+      {/* ── Collapsible Chart Explanations ────────────────────── */}
+      <ChartExplanations />
 
       {/* ── Metrics Table ──────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto bg-[#1e2130] rounded-2xl border border-[#2a2f45] p-6">
